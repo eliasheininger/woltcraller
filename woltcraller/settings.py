@@ -92,6 +92,6 @@ REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
 
-MONGO_URI = "mongodb+srv://eliasheininger:Mogano0204!@tastematch.mjhuw4z.mongodb.net/"
+MONGO_URI = "mongodb+srv://eliasheininger:wefwefwef!@tastematch.mjhuw4z.mongodb.net/"
 
 MONGO_DATABASE = "tastematch"
