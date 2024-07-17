@@ -1,0 +1,60 @@
+recipe:
+  title: "Walnuss & Feta Gnocchi"
+  ingredients:
+    - name: "Gnocchi"
+      amount: "600g"
+      type: "nudeln"
+    - name: "tomaten"
+      amount: "250g"
+      type: "gemuse"
+      preparation: "halbiert"
+    - name: "Knoblauch"
+      amount: "3"
+      type: "gemuse"
+      preparation: "fein gehackt"
+    - name: "spinat"
+      amount: "200g"
+      type: "gemuse"
+      preparation: "gewaschen und grob gehackt"
+    - name: "Walnüsse"
+      amount: "100g"
+      type: "nusse"
+      preparation: "grob gehackt"
+    - name: "Schafskäse"
+      amount: "200g"
+      type: "kase"
+      preparation: "zerkrümelt"
+  instructions:
+    - step: 1
+      description: |
+        Gnocchi zubereiten:
+        - In gesalzenem Wasser nach Packungsanleitung kochen, abgießen und beiseite stellen.
+    - step: 2
+      description: |
+        Spinat-Tomaten-Mischung:
+        - In einer Pfanne 2 EL Olivenöl erhitzen.
+        - Knoblauch eine Minute anbraten.
+        - Mini Pflaumentomaten zufügen, 2-3 Minuten kochen.
+        - Spinat hinzufügen und weitere 2-3 Minuten kochen, bis er welk ist.
+        - Mit Salz und Pfeffer würzen.
+    - step: 3
+      description: |
+        Walnüsse rösten:
+        - Gehackte Walnüsse in einer separaten Pfanne 3-4 Minuten bei mittlerer Hitze rösten, bis sie goldbraun sind.
+    - step: 4
+      description: |
+        Kombinieren und Servieren:
+        - Gekochte Gnocchi mit der Spinat-Tomaten-Mischung vermischen.
+        - Schafskäse und geröstete Walnüsse unterheben.
+        - Mit Olivenöl beträufeln, nachwürzen und heiß servieren, optional mit Basilikum garniert.
+  nutrition:
+    calories: 1914 kcal
+    carbohydrates: 201.5g
+    protein: 72.95g
+    fat: 103.2g
+  nutrients_per_serving:
+    serving_size: 4
+    calories: 478.5 kcal
+    carbohydrates: 50.375g
+    protein: 18.2375g
+    fat: 25.8g

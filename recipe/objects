@@ -1,0 +1,249 @@
+import re
+import pandas as pd
+
+
+class Ingredient:  # manages ingredients, updating prices etc.
+
+    def __init__(self, name, price, amount):
+        self.name = name
+        self.price = price
+        self.amount = amount
+
+    def update_price(self, new_price):
+        self.price = new_price
+        print("updated ", self.name, "to new price: ", self.price)
+
+    def __str__(self):
+        return f"{self.name} comes in this amount: {self.amount} and costs this much per unit: {self.price} each"
+
+
+class Inventory:  # stores all available ingredients
+    def __init__(self, ingredient_prices):
+        self.ingredients = {}
+        for name, price in ingredient_prices.items():
+            numeric_price = self.extract_price(price)
+            lower_name = name.lower()
+            self.ingredients[lower_name] = Ingredient(
+                lower_name, numeric_price, "default amount"
+            )
+            # print(f"Adding {lower_name} to inventory with price {numeric_price}")  # Debug statement
+
+    def add(
+        self, name, price, amount
+    ):  # adding ingredients with all infos to inventory
+        lower_name = name.lower()
+        if lower_name in self.ingredients:
+            self.ingredients[lower_name].update_price(self.extract_price(price))
+            print(f"{lower_name} already exists in inventory, updated price.")
+        else:
+            self.ingredients[lower_name] = Ingredient(
+                lower_name, self.extract_price(price), amount
+            )
+            print(
+                f"{lower_name} was added to inventory with price {self.extract_price(price)}"
+            )
+
+    def get(self, name):  # used to fetch infos of ingredients for recipes
+        lower_name = name.lower()
+        if lower_name in self.ingredients:
+            return self.ingredients[lower_name]
+        else:
+            sub_match = [
+                ing
+                for ing_name, ing in self.ingredients.items()
+                if lower_name in ing_name
+            ]
+            if sub_match:
+                cheapest = min(sub_match, key=lambda x: x.price)
+                print(
+                    f"cheapest submatch found for {name}: {cheapest.name} at {cheapest.price}"
+                )
+                return cheapest
+
+            print(f"{name} not found in inventory")
+            return None
+
+    @staticmethod
+    def extract_price(price_str):  # Extract the numeric part from the price string
+        match = re.search(r"€(\d+[\.,]\d+)", price_str)
+        if match:
+            price = match.group(1).replace(",", ".")
+            return float(price)
+        else:
+            print(f"failed to extract price from: {price_str}")
+            return 0.0
+
+    def __str__(self):
+        if not self.ingredients:
+            return "inventory is empty"
+        return "\n".join(str(ingredient) for ingredient in self.ingredients.values())
+
+
+class Recipe:  # defines a recipe
+    def __init__(self, name, servings=1):
+        self.name = name
+        self.servings = servings
+        self.ingredients = {}
+
+    def add_ingredient(
+        self, ingredient, quantity
+    ):  # adds ingredient to a recipe if existent in inventory
+        if ingredient is None:
+            print("attempted to add non existent ingredient")
+            return
+        self.ingredients[ingredient.name] = (ingredient, quantity)
+
+    def update_servings(self, new_servings):
+        if new_servings > 0:
+            self.servings = new_servings
+        else:
+            print("number of servings must be greater than 0")
+
+    def calculate_cost(self):  # calculates the cost of all ingredients needed combined
+        return (
+            sum(
+                ingredient.price * quantity
+                for ingredient, quantity in self.ingredients.values()
+            )
+            * self.servings
+        )
+
+    def __str__(self):
+        if not self.ingredients:
+            return f"Recipe for {self.name} includes: No ingredients."
+        ingredients_str = ", ".join(
+            f"{qty * self.servings} x {ing.name} ({ing.amount}) at {ing.price}"
+            for ing, qty in self.ingredients.values()
+        )
+        return f"Recipe for {self.name} includes for {self.servings} servings: {ingredients_str}"
+
+
+csv_filepath = "/Users/eliasheininger/Desktop/tasteobjects/mmm.csv"
+
+df = pd.read_csv(csv_filepath)
+
+
+ingredient_prices = {
+    "Mini-Roma Tomatoes": "€2.99/pc",
+    "Cherry Rispentomaten": "€3.99/pc",
+    "Rispentomaten": "€3.99/kg",
+    "Cherry-Rispentomaten San Lucar": "€13.90/kg",
+    "Mini Rispentomaten": "€3.29/pc",
+    "Pflaumentomaten": "€3.49/pc",
+    "Mini Pflaumentomaten": "€2.69/pc",
+    "Erdnuesse Jumbo": "€2.99/pc",
+    "Champignons braun": "€2.99/pc",
+    "Austernpilze": "€2.89/pc",
+    "Gartenkresse": "€0.99/pc",
+    "Basilikum": "€2.19/pc",
+    "Koriander": "€2.19/pc",
+    "Minze": "€2.19/pc",
+    "Dill": "€2.19/pc",
+    "Schnittlauch": "€2.19/pc",
+    "Salbei": "€2.19/pc",
+    "Landgurke": "€1.29/pc",
+    "Minigurke": "€3.19/pc",
+    "Paprika Mix": "€3.49/pc",
+    "Bio Paprika Mix": "€3.79/pc",
+    "Bio Paprika rot": "€3.79/pc",
+    "Spitzpaprika Rot": "€2.99/pc",
+    "Chili Peperoncino Gruen": "€2.39/pc",
+    "Bio Moehren": "€2.99/pc",
+    "Ingwer": "€9.90/kg",
+    "Frischer knoblauch": "€1.99/pc",
+    "Knollensellerie": "€2.49/pc",
+    "Weisser Rettich": "€2.29/pc",
+    "Suppengruen": "€2.39/pc",
+    "Fenchel": "€0.99/pc",
+    "Radieschenbund": "€1.19/pc",
+    "Bio Zucchini": "€3.89/pc",
+    "Bio Zuckermas": "€2.99/pc",
+    "Aubergine": "€1.49/pc",
+    "Rosmarin": "€2.19/pc",
+    "Petersilie glatt": "€2.19/pc",
+    "Provence Kraeuter Mix": "€2.45/pc",
+    "Schalotten": "€1.99/pc",
+    "Suesskartoffeln": "€4.99/kg",
+    "Kartoffeln mehligkochend": "€4.89/pc",
+    "Kartoffeln festkochend": "€4.89/pc",
+    "Kartoffeln vorwiegend festkochend": "€4.89/pc",
+    "Kartoffeln Drillinge": "€3.29/pc",
+    "Kartoffeln": "€3.99/kg",
+    "Getrockneter Knoblauch": "€2.49/pc",
+    "Walnuesse": "€3.99/pc",
+    "Bioland Rinderhackfleisch": "€7.49 for 320g",
+    "Bioland Hackfleisch Gemischt": "€7.39 for 320g",
+    "Hackfleisch Gemischt": "€4.69 for 500g",
+    "Rinderhackfleisch": "€5.39 for 300g",
+    "Rinder- & Schweinehackfleisch Gemischt": "€5.89 for 400g",
+    "Gefluegel Haehnchen-Schenkel mit Rueckenstueck": "€7.99 for 600g",
+    "Gefluegel Haehnchenbrustfilet": "€8.99 for 400g",
+    "Haehnchen Brustfilet": "€8.99 for 600g",
+    "Mini Berner Wuerstl": "€4.49 for 250g",
+    "Grüne Paprika": "€1,50/Stk.",
+    "Rote Zwiebeln": "€0,99/kg",
+    "Knoblauchzehen": "€0,50/Stk.",
+    "Gurken": "€1,20/Stk.",
+    "Spinatbund": "€1,99/Stk.",
+    "Babyspinat": "€2,50/Beutel",
+    "Zucchini": "€2,00/kg",
+    "Karotten": "€1,10/kg",
+    "Kartoffeln": "€0,89/kg",
+    "Süßkartoffeln": "€1,40/kg",
+    "Hähnchenbrust": "€6,50/kg",
+    "Ganzes Hähnchen": "€4,99/Stk.",
+    "Schweinekoteletts": "€8,20/kg",
+    "Rinderlende": "€12,30/kg",
+    "Lachsfilets": "€17,99/kg",
+    "Tilapia": "€9,50/kg",
+    "Basilikumblätter": "€0,99/Packung",
+    "Petersilie": "€0,79/Bund",
+    "Thymian": "€0,95/Packung",
+    "Rosmarin": "€1,00/Packung",
+    "Cheddar-Käse": "€2,50/200g",
+    "Mozzarella": "€2,70/200g",
+    "Parmesankäse": "€3,99/100g",
+    "Butter": "€1,50/250g",
+    "Olivenöl": "€3,99/500ml",
+    "Balsamico-Essig": "€4,50/250ml",
+    "Sojasauce": "€2,25/250ml",
+    "Salz": "€0,30/500g",
+    "Pfeffer": "€3,00/100g",
+    "Currypulver": "€2,99/100g",
+    "Reis": "€1,99/kg",
+    "Nudeln": "€1,29/500g",
+    "edeka originale gnocchi": "€1.69/500g",
+    "mini pflaumentomaten (mein bayern)": "€2.69/250g",
+    "bio getrockneter knoblauch": "€2.49/pc",
+    "bio blattspinat 100g schale": "€3.98/pc",
+    "salakis schafskaese natur": "€3,49/200g",
+    "Gut & Guenstig Walnusskerne": "€3,09/200g",
+}
+
+
+store = Inventory(df)
+
+
+store.add("cherry tomaten", "€1.99", 1)
+
+# print(store)
+
+pasta_recipe = Recipe("Pasta Pomodoro", servings=2)
+pasta_recipe.add_ingredient(store.get("basilikum"), 1)
+pasta_recipe.add_ingredient(store.get("tomaten"), 2)
+pasta_recipe.add_ingredient(store.get("knoblauch"), 1)
+pasta_recipe.add_ingredient(store.get("nudeln"), 1)
+print(pasta_recipe)
+# print("Total Cost:", pasta_recipe.calculate_cost())
+
+gnocchi_recipe = Recipe("Walnuss Feta Gnocchi", servings=1)
+gnocchi_recipe.add_ingredient(store.get("gnocchi"), 1)
+gnocchi_recipe.add_ingredient(store.get("tomaten"), 1)
+gnocchi_recipe.add_ingredient(store.get("walnusskerne"), 1)
+# gnocchi_recipe.add_ingredient(store.get("knoblauch"), 1)
+gnocchi_recipe.add_ingredient(store.get("spinat"), 2)
+gnocchi_recipe.add_ingredient(store.get("schafskaese"), 1)
+print(gnocchi_recipe)
+# print("Total cost:", gnocchi_recipe.calculate_cost())
+
+# servicegebuehr 48ct

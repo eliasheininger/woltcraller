@@ -1,0 +1,205 @@
+import yaml
+import pandas as pd
+from pymongo import MongoClient, errors
+
+
+# Connect to MongoDB
+def connect_mongo(uri, db_name):
+    try:
+        client = MongoClient(uri, serverSelectionTimeoutMS=5000)
+        db = client[db_name]
+        # Attempt to connect to the server to trigger any potential errors
+        client.admin.command("ping")
+        return db
+    except errors.ServerSelectionTimeoutError as err:
+        print(f"Connection failed: {err}")
+        return None
+
+
+# Load CSV data into MongoDB
+def load_csv_to_mongo(db, collection_name, file_path):
+    if db is None:
+        print("Database connection not established.")
+        return
+
+    df = pd.read_csv(file_path)
+    collection = db[collection_name]
+    payload = df.to_dict(orient="records")
+    try:
+        collection.insert_many(payload)
+        print(f"Data inserted into {collection_name} collection.")
+    except errors.BulkWriteError as bwe:
+        print(f"Bulk write error: {bwe.details}")
+    except errors.PyMongoError as pme:
+        print(f"PyMongo error: {pme}")
+
+
+# Load recipe from YAML file
+def load_recipe(file_path):
+    with open(file_path, "r") as file:
+        recipe = yaml.safe_load(file)
+    return recipe
+
+
+# Extract ingredient names and categories from the recipe
+def extract_ingredient_names_and_categories(recipe):
+    ingredients = recipe.get("recipe", {}).get("ingredients", [])
+    ingredient_info = [
+        (ingredient["name"], ingredient["type"]) for ingredient in ingredients
+    ]
+    return ingredient_info
+
+
+# Fetch store data from MongoDB
+def fetch_store_data(db, collection_name):
+    collection = db[collection_name]
+    store_data = list(collection.find({}))
+    return pd.DataFrame(store_data)
+
+
+def match_ingredients(recipe, db, collections):
+    ingredient_info = extract_ingredient_names_and_categories(recipe)
+    all_matched_ingredients = {collection: [] for collection in collections}
+
+    for ingredient, category in ingredient_info:
+        for collection in collections:
+            store = fetch_store_data(db, collection)
+            match = store[
+                (store["item_name"].str.contains(ingredient, case=False, na=False))
+                # & (store["category"].str.contains(category, case=False, na=False))
+            ]
+            if not match.empty:
+                all_matched_ingredients[collection].append(match)
+
+    # Convert list of DataFrames to a single DataFrame for each store
+    for collection in collections:
+        if all_matched_ingredients[collection]:
+            all_matched_ingredients[collection] = pd.concat(
+                all_matched_ingredients[collection]
+            )
+        else:
+            all_matched_ingredients[collection] = pd.DataFrame()
+
+    return all_matched_ingredients
+
+
+# Format and print matched ingredients by store
+def format_matched_ingredients_by_store(matched_ingredients):
+    for store, ingredients in matched_ingredients.items():
+        print(f"\nMatched Ingredients from {store}:")
+        if ingredients.empty:
+            print("No ingredients matched.")
+        else:
+            for index, row in ingredients.iterrows():
+                print(
+                    f"Matched Ingredient: {row['storename']} | {row['main_category']} | {row['item_name']} | Price: {row['item_price']} | Category: {row['sub_category']}"
+                )
+
+
+def collection_unique_str(db, collection, str):
+    store = fetch_store_data(db, collection)
+    return store[str].unique()
+
+
+# Function to find common categories across all stores
+def find_common_categories(db, collections, str):
+    categories_per_store = []
+
+    for collection in collections:
+        categories_per_store.append(set(collection_unique_str(db, collection, str)))
+
+    common_categories = set.intersection(*categories_per_store)
+    return common_categories
+
+
+def find_uncommon_categories(db, collections):
+
+    temp = set()
+    gggg = find_common_categories(db, collections)
+    for ggg in gggg:
+        gggg.add(ggg)
+
+    for collection in collections:
+        store = fetch_store_data(db, collection)
+        categories = set(store["main_category"].unique())
+        print(categories.discard(ggg))
+
+
+def count_total_items_in_stores(db, collections):
+    total_items = 0
+    for collection in collections:
+        store = fetch_store_data(db, collection)
+        total_items += len(store)
+    return total_items
+
+
+# Correct MongoDB URI with SSL/TLS settings and specifying TLS version
+# mongo_uri = "mongodb+srv://eliasheininger:Mogano0204!@tastematch.mjhuw4z.mongodb.net/?retryWrites=true&w=majority&tls=true&tlsAllowInvalidCertificates=true&appName=tastematch&tlsVersion=TLS1_2"
+mongo_uri = "mongodb+srv://eliasheininger:Mogano0204!@tastematch.mjhuw4z.mongodb.net/"
+
+db_name = "tastematch"
+
+# Connect to MongoDB
+db = connect_mongo(mongo_uri, db_name)
+
+if db is not None:
+
+    # Load recipe
+    recipe = load_recipe(
+        "/Users/eliasheininger/Desktop/tasteobjects/WalnussGnocchi.yaml"
+    )
+    # Define store collections
+    store_collections = [
+        # "penny neuhausen",
+        "flink barthstr",
+        "flink blutenburgstr",
+        "flink ungererstr",
+        # "edeka theresie",
+        # "sri balaji indian market mnchen",
+    ]
+
+    # Match ingredients
+    matched_ingredients = match_ingredients(recipe, db, store_collections)
+
+    # Print results
+    # print(recipe)
+    # print("\nExtracted Ingredient Names and Categories:")
+    # print(extract_ingredient_names_and_categories(recipe))
+    # print("\nMatched Ingredients:")
+    # format_matched_ingredients_by_store(matched_ingredients)
+
+    # total_items = count_total_items_in_stores(db, store_collections)
+    # print(f"\nTotal items in all stores: {total_items}")
+
+    # common_categories = find_common_categories(db, store_collections)
+    # print("\nCommon Categories across all stores:")
+    # for category in common_categories:
+    #     print(category)
+
+    # print("bashhlhjj--------------------------------")
+    # find_uncommon_categories(db, store_collections)
+
+    # total_unique_subcategories = count_unique_subcategories(db, store_collections)
+    # print("\n unique sub_categories across all stores:")
+    # for category in total_unique_subcategories:
+    #     print(category)
+
+    # total_unique_maincategories = count_unique_maincategories(db, store_collections)
+    # print("\n unique main_categories across all stores:")
+    # for category in total_unique_subcategories:
+    #     print(category)
+
+    my_array = find_common_categories(db, store_collections, "main_category")
+
+    print(len(my_array))
+    print(my_array)
+    print("\n")
+    for store in store_collections:
+        print(store)
+        print(collection_unique_str(db, store, "main_category"))
+        print("\n")
+    # print(collection_unique_str(db, store_collections[1], "main_category"))
+
+
+else:
+    print("Failed to connect to the MongoDB database.")

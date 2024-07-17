@@ -1,0 +1,60 @@
+ingredients:
+  Vegetables:
+    - gemuse
+  Fruits:
+    - obst
+  Proteins:
+    - fleisch_fisch
+    - wurst_aufschnitt
+    - kase
+  Dairy_and_Alternatives:
+    - eier_milch
+    - joghurt_desserts
+    - kase
+    - internationale_kuche
+  Grains_and_Cereals:
+    - nudeln_reis_getreide
+    - backwaren
+    - aufstriche_cerealien
+    - internationale_kuche
+  Legumes_Nuts_and_Seeds:
+    - nusse_trockenobst
+    - nusse_trockenfruchte
+    - salzige_snacks
+  Herbs_and_Spices:
+    - saucen_ole_gewurze
+  Oils_and_Fats:
+    - saucen_ole_gewurze
+  Sweeteners_and_Baking_Essentials:
+    - sue_snacks
+    - backen_desserts
+  Sauces_and_Condiments:
+    - salzige_snacks
+    - saucen_ole_gewurze
+    - internationale_kuche
+  Frozen_Foods:
+    - eis
+    - tiefkuhl
+  Semi_cooked_and_Canned_Items:
+    - konserven_fertiggerichte
+    - frisch_fertig
+    - internationale_kuche
+
+  Other:
+    - katze_hund
+    - haushalt_technik
+    - baby
+    - fitness
+    - internationale_kuche
+    - spirituosen_mehr
+    - bier
+    - alkoholfreie_getranke
+    - wein_sekt
+    - discount_gunstig
+    - kaffee_tee_kakao
+    - drogerie_hygiene
+    - kosmetik
+    - artikel_unter_2
+    - rewe_lieblinge
+    - feinkost
+    - schnelle_schnappchen

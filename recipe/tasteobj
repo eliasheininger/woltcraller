@@ -1,0 +1,172 @@
+import re
+import pandas as pd
+import yaml
+
+
+class Ingredient:  # Manages ingredients, updating prices, etc.
+    def __init__(self, name, price, amount, category):
+        self.name = name
+        self.price = price
+        self.amount = amount
+        self.category = category
+
+    def update_price(self, new_price):
+        self.price = new_price
+        print("Updated ", self.name, " to new price: ", self.price)
+
+    def __str__(self):
+        return f" {self.category}: {self.name} comes in this amount: {self.amount} and costs this much per unit: {self.price} each"
+
+
+class Inventory:  # Stores all available ingredients
+    def __init__(self, df):
+        self.ingredients = {}
+        for index, row in df.iterrows():
+            name = row["item_name"].strip().lower()
+            price = row["item_price"]
+            category = row["category"].strip().lower()
+            # print(
+            #     f"Processing row {index}: {name} with price {price} of category: {category}"
+            # )  # Debug statement
+            numeric_price = self.extract_price(price)
+            lower_name = name.lower()
+            self.ingredients[lower_name] = Ingredient(
+                lower_name, numeric_price, "default amount", category
+            )
+            # print(
+            #     f"Added {lower_name} to inventory with price {numeric_price} in {category}"
+            # )  # Debug statement
+
+    def add(
+        self, name, price, amount, category
+    ):  # Adding ingredients with all infos to inventory
+        lower_name = name.lower()
+        if lower_name in self.ingredients:
+            self.ingredients[lower_name].update_price(self.extract_price(price))
+            print(f"{lower_name} already exists in inventory, updated price.")
+        else:
+            self.ingredients[lower_name] = Ingredient(
+                lower_name, self.extract_price(price), amount, category
+            )
+            print(
+                f"{lower_name} was added to inventory with price {self.extract_price(price)} in {category}"
+            )
+
+    def get(
+        self, name, category=None
+    ):  # Used to fetch infos of ingredients for recipes
+        lower_name = name.lower()
+        if (
+            lower_name in self.ingredients
+            and self.ingredients[lower_name].category in category
+        ):
+
+            return self.ingredients[lower_name]
+        else:
+            sub_match = [
+                ing
+                for ing_name, ing in self.ingredients.items()
+                if lower_name in ing_name and ing.category in category
+            ]
+
+            if sub_match:
+
+                cheapest = min(sub_match, key=lambda x: x.price)
+                print(
+                    f"Cheapest submatch found for {name}: {cheapest.name} at {cheapest.price}"
+                )
+                return cheapest
+
+            print(f"{name} not found in inventory")
+            return None
+
+    @staticmethod
+    def extract_price(price_str):  # Extract the numeric part from the price string
+        if not isinstance(price_str, str):
+            print(f"Warning: Expected string but got {type(price_str)}: {price_str}")
+            return 0.0
+
+        match = re.search(r"€(\d+[\.,]\d+)", price_str)
+        if match:
+            price = match.group(1).replace(",", ".")
+            return float(price)
+        else:
+            print(f"Failed to extract price from: {price_str}")
+            return 0.0
+
+    def __str__(self):
+        if not self.ingredients:
+            return "Inventory is empty"
+        return "\n".join(str(ingredient) for ingredient in self.ingredients.values())
+
+
+class Recipe:  # Defines a recipe
+    def __init__(self, name, servings=1):
+        self.name = name
+        self.servings = servings
+        self.ingredients = {}
+
+    def add_ingredient(
+        self, ingredient, quantity, expected_category
+    ):  # Adds ingredient to a recipe if existent in inventory
+        if ingredient is None:
+            print("Attempted to add non existent ingredient")
+            return
+        if expected_category and ingredient.category != expected_category:
+            print("category mismatch")
+            return
+        self.ingredients[ingredient.name] = (ingredient, quantity)
+
+    def update_servings(self, new_servings):
+        if new_servings > 0:
+            self.servings = new_servings
+        else:
+            print("Number of servings must be greater than 0")
+
+    def calculate_cost(self):  # Calculates the cost of all ingredients needed combined
+        return (
+            sum(
+                ingredient.price * quantity
+                for ingredient, quantity in self.ingredients.values()
+            )
+            * self.servings
+        )
+
+    def __str__(self):
+        if not self.ingredients:
+            return f"Recipe for {self.name} includes: No ingredients."
+        ingredients_str = ", ".join(
+            f"{qty * self.servings} x {ing.name} ({ing.amount}) at {ing.price}"
+            for ing, qty in self.ingredients.values()
+        )
+        return f"Recipe for {self.name} includes for {self.servings} servings: {ingredients_str}"
+
+
+csv_file_path = "/Users/eliasheininger/Desktop/tasteobjects/ede.csv"
+df = pd.read_csv(csv_file_path)
+
+csv_file_path = "/Users/eliasheininger/Desktop/tasteobjects/penny.csv"
+df1 = pd.read_csv(csv_file_path)
+
+store = Inventory(df)
+
+print(len(df))
+
+pasta_recipe = Recipe("Pasta", servings=2)
+pasta_recipe.add_ingredient(
+    store.get("tomaten", category="tomate gurke paprika"),
+    1,
+    expected_category="tomate gurke paprika",
+)
+print(pasta_recipe)
+print("Total Cost:", pasta_recipe.calculate_cost())
+
+# gnocchi_recipe = Recipe("Walnuss Feta Gnocchi", servings=1)
+# gnocchi_recipe.add_ingredient(store.get("gnocchi"), 1)
+# gnocchi_recipe.add_ingredient(store.get("tomaten"), 1)
+# gnocchi_recipe.add_ingredient(store.get("walnusskerne"), 1)
+# gnocchi_recipe.add_ingredient(store.get("knoblauch"), 1)
+# gnocchi_recipe.add_ingredient(store.get("spinat"), 2)
+# gnocchi_recipe.add_ingredient(store.get("schafsk"), 1)
+# print(gnocchi_recipe)
+# print("Total cost:", gnocchi_recipe.calculate_cost())
